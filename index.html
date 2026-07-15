@@ -115,7 +115,7 @@
 
     <div data-reveal style="display: flex; align-items: center; gap: clamp(14px, 5vw, 30px); margin: 18px 0 10px; animation: riseIn 1s ease 2.65s both;">
       <div style="width: clamp(40px,14vw,110px); height: 1px; background: linear-gradient(90deg, transparent, #c9a24b);"></div>
-      <div style="font-family: 'Gulzar', serif; font-size: clamp(52px, 15vw, 120px); line-height: 1.4; background: linear-gradient(100deg, #e6c477, #f6e6bf, #c9a24b, #f6e6bf, #e6c477); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s ease-in-out infinite;">خوش آمدید</div>
+      <div style="font-family: 'Gulzar', serif; font-size: clamp(52px, 15vw, 120px); line-height: 1.8; padding-top: 0.25em; background: linear-gradient(100deg, #e6c477, #f6e6bf, #c9a24b, #f6e6bf, #e6c477); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s ease-in-out infinite;">خوش آمدید</div>
       <div style="width: clamp(40px,14vw,110px); height: 1px; background: linear-gradient(270deg, transparent, #c9a24b);"></div>
     </div>
 
@@ -236,20 +236,20 @@ class Component extends DCLogic {
   componentDidMount() {
     this.timer = setInterval(() => this.setState({ now: Date.now() }), 1000);
     const a = this.audioRef.current;
-    if (a) a.volume = 1;
-    const tryPlay = () => {
-      if (!a) return;
-      a.play().then(() => {
-        this.setState({ musicOn: true });
-        document.removeEventListener('click', tryPlay);
-        document.removeEventListener('touchstart', tryPlay);
-        document.removeEventListener('keydown', tryPlay);
-      }).catch(() => {});
+    if (!a) return;
+    a.volume = 1;
+    // browsers block unmuted autoplay with no user gesture — start muted
+    // (always allowed) then unmute the instant ANY interaction fires, so
+    // sound starts on its own without needing the music button specifically
+    a.muted = true;
+    a.play().catch(() => {});
+    const unmute = () => {
+      a.muted = false;
+      a.play().then(() => this.setState({ musicOn: true })).catch(() => {});
+      events.forEach((ev) => document.removeEventListener(ev, unmute));
     };
-    tryPlay();
-    document.addEventListener('click', tryPlay);
-    document.addEventListener('touchstart', tryPlay);
-    document.addEventListener('keydown', tryPlay);
+    const events = ['click', 'touchstart', 'keydown', 'pointerdown', 'mousemove', 'scroll', 'wheel'];
+    events.forEach((ev) => document.addEventListener(ev, unmute, { once: false, passive: true }));
   }
 
   componentWillUnmount() {
