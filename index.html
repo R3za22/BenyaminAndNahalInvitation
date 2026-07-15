@@ -101,7 +101,7 @@
   <button onClick="{{ toggleMusic }}" aria-label="music" style="position: fixed; top: 22px; left: 22px; z-index: 60; width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(201,162,75,0.5); background: rgba(15,23,16,0.55); backdrop-filter: blur(8px); color: #e6c477; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(0,0,0,0.35);">
     <span style="display: inline-block;">{{ musicIcon }}</span>
   </button>
-  <audio ref="{{ audioRef }}" loop autoplay preload="auto">
+  <audio ref="{{ audioRef }}" loop autoplay muted playsinline preload="auto">
     <source src="uploads/wedding-music.mp3" type="audio/mpeg">
   </audio>
 
@@ -238,9 +238,10 @@ class Component extends DCLogic {
     const a = this.audioRef.current;
     if (!a) return;
     a.volume = 1;
-    // browsers block unmuted autoplay with no user gesture — start muted
-    // (always allowed) then unmute the instant ANY interaction fires, so
-    // sound starts on its own without needing the music button specifically
+    // browsers block unmuted autoplay with no user gesture (scroll/mousemove
+    // do NOT count as a gesture in any browser) — start muted (always
+    // allowed) then unmute on the first real tap/click/key, which fires on
+    // virtually every visit within a second or two
     a.muted = true;
     a.play().catch(() => {});
     const unmute = () => {
@@ -248,8 +249,8 @@ class Component extends DCLogic {
       a.play().then(() => this.setState({ musicOn: true })).catch(() => {});
       events.forEach((ev) => document.removeEventListener(ev, unmute));
     };
-    const events = ['click', 'touchstart', 'keydown', 'pointerdown', 'mousemove', 'scroll', 'wheel'];
-    events.forEach((ev) => document.addEventListener(ev, unmute, { once: false, passive: true }));
+    const events = ['click', 'touchstart', 'touchend', 'keydown', 'pointerdown', 'pointerup'];
+    events.forEach((ev) => document.addEventListener(ev, unmute, { once: false, passive: true, capture: true }));
   }
 
   componentWillUnmount() {
