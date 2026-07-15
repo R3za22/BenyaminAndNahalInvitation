@@ -77,11 +77,14 @@
 <div dir="rtl" style="font-family: 'Vazirmatn', sans-serif; color: #f3ecdd; background: #0f1710; overflow-x: hidden;">
 
   <!-- intro curtain -->
-  <div style="position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(120% 100% at 50% 40%, #1c2c1c, #0b1207); animation: introOut 1.1s ease 2.4s forwards;">
-    <div style="width: 118px; height: 118px; border-radius: 50%; border: 1px solid rgba(201,162,75,0.55); display: flex; align-items: center; justify-content: center; animation: sealIn 1.2s cubic-bezier(.2,.8,.2,1) both; box-shadow: 0 0 40px rgba(201,162,75,0.25);">
-      <div style="font-family: 'Gulzar', serif; font-size: 42px; color: #e6c477;">ب&nbsp;ن</div>
+  <div style="position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(120% 100% at 50% 40%, #1c2c1c, #0b1207); opacity: {{ curtainOpacity }}; pointer-events: {{ curtainPointer }}; transition: opacity 900ms ease;">
+    <div style="max-width: 90vw; padding: 18px 30px; border-radius: 999px; border: 1px solid rgba(201,162,75,0.55); display: flex; align-items: center; justify-content: center; gap: 12px; animation: sealIn 1.2s cubic-bezier(.2,.8,.2,1) both; box-shadow: 0 0 40px rgba(201,162,75,0.25); white-space: nowrap;">
+      <div style="font-family: 'Gulzar', serif; font-size: clamp(22px, 6vw, 34px); color: #e6c477;">بنیامین</div>
+      <div style="font-family: 'Gulzar', serif; font-size: clamp(16px, 4vw, 22px); color: #c9a24b;">و</div>
+      <div style="font-family: 'Gulzar', serif; font-size: clamp(22px, 6vw, 34px); color: #e6c477;">نهال</div>
     </div>
     <div style="margin-top: 22px; font-family: 'Vazirmatn', sans-serif; font-weight: 300; letter-spacing: 8px; font-size: 13px; color: #b7c8a3; animation: sealIn 1.2s ease 0.3s both;">دعوت‌نامه</div>
+    <button onClick="{{ enter }}" style="margin-top: 36px; padding: 13px 50px; border-radius: 999px; border: 1px solid rgba(201,162,75,0.6); background: rgba(201,162,75,0.1); color: #e6c477; font-family: 'Vazirmatn', sans-serif; font-weight: 400; font-size: 15px; letter-spacing: 5px; cursor: pointer; animation: sealIn 1.2s ease 0.6s both; transition: background 200ms ease, transform 200ms ease;">ورود</button>
   </div>
 
   <!-- ambient glow orbs -->
@@ -228,7 +231,7 @@ class Component extends DCLogic {
       dur: rnd(9, 17).toFixed(1) + 's',
       delay: '-' + rnd(0, 16).toFixed(1) + 's',
     }));
-    this.state = { musicOn: false, now: Date.now() };
+    this.state = { musicOn: false, entered: false, now: Date.now() };
     // 29 Mordad 1405 ≈ 20 August 2026, 19:00
     this.target = new Date('2026-08-20T19:00:00').getTime();
   }
@@ -256,6 +259,12 @@ class Component extends DCLogic {
   componentWillUnmount() {
     clearInterval(this.timer);
   }
+
+  enter = () => {
+    const a = this.audioRef.current;
+    if (a) { a.muted = false; a.volume = 1; a.play().catch(() => {}); }
+    this.setState({ entered: true, musicOn: true });
+  };
 
   toggleMusic = () => {
     const a = this.audioRef.current;
@@ -286,6 +295,9 @@ class Component extends DCLogic {
       musicIcon: this.state.musicOn ? '♪' : '♫',
       toggleMusic: this.toggleMusic,
       audioRef: this.audioRef,
+      enter: this.enter,
+      curtainOpacity: this.state.entered ? 0 : 1,
+      curtainPointer: this.state.entered ? 'none' : 'auto',
       countdown: [
         { value: this.faDigits(d), label: 'روز' },
         { value: pad(h), label: 'ساعت' },
